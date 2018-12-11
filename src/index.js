@@ -28,9 +28,11 @@ var player;
 var star;
 var sky;
 var text;
+var collectable;
 var prevx = 100;
 var prevy = 450;
-
+var bombs;
+var score = 0;
 function preload ()
 {
     this.load.image('sky', 'assets/sky.png');
@@ -47,7 +49,7 @@ function create ()
     platforms = this.physics.add.staticGroup();
     this.physics.world.setBounds(0, 0, 4000, 4000);
 
-    text = this.add.text(30, 30).setText('Score: 0').setScrollFactor(0);
+    text = this.add.text(30, 30).setText('Score: '+score).setScrollFactor(0);
 
 
     player = this.physics.add.sprite(100,450,'boxy');
@@ -58,12 +60,19 @@ function create ()
     for(let i = 0; i<10; i++){
         for(let j = 1; j<11; j++){
             if(Math.random()<.5){
-            platforms.create(i*400+200, j*400+16, 'ground');
-                }
-//            platforms.create(i*400+200,3968, 'ground');
+                platforms.create(i*400+200, j*400+16, 'ground');
+            }
+            //            platforms.create(i*400+200,3968, 'ground');
         }
 
     }
+
+    collectable = this.physics.add.group({
+        key: 'star',
+        repeat: 40,
+        setXY: {x: 12, y:0, stepX: 100 }
+    });
+
     console.log(platforms)
     star = this.add.sprite(100,450,'star').setScale(.5);
     star.visible = false;
@@ -77,9 +86,15 @@ function create ()
     //    sky.x = this.cameras.main.x;
     //    sky.y = this.cameras.main.y;
 
+    bombs = this.physics.add.group();
 
 
     this.physics.add.collider(player, platforms);
+    this.physics.add.collider(collectable, platforms);
+    this.physics.add.overlap(player, collectable, collectStar, null, this);
+    this.physics.add.collider(bombs, platforms);
+    this.physics.add.collider(player, bombs, hitBomb, null, this);
+
 
     this.input.on('pointermove', function (pointer) {
         if (this.input.mouse.locked)
@@ -132,7 +147,6 @@ function create ()
 
 
 
-
 }
 
 
@@ -153,4 +167,40 @@ function update ()
         player.body.drag.x = 0;
     }
 
+}
+
+
+function collectStar (player, star)
+{
+    star.disableBody(true, true);
+
+    score += 10;
+    text.setText('Score: ' + score);
+
+    if (collectable.countActive(true) === 0)
+    {
+        collectable.children.iterate(function (child) {
+
+            child.enableBody(true, child.x, 0, true, true);
+
+        });
+
+        var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+
+        var bomb = bombs.create(x, 16, 'bomb');
+        bomb.setBounce(1);
+        bomb.setCollideWorldBounds(true);
+        bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+        bomb.allowGravity = false;
+
+    }
+}
+
+function hitBomb (player, bomb)
+{
+    this.physics.pause();
+
+    player.setTint(0xff0000);
+
+    gameOver = true;
 }
