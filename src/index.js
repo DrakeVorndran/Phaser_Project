@@ -69,7 +69,7 @@ function create ()
 
     collectable = this.physics.add.group({
         key: 'star',
-        repeat: 40,
+        repeat: 39,
         setXY: {x: 12, y:0, stepX: 100 }
     });
 
